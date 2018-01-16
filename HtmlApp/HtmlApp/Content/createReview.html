@@ -1,0 +1,1069 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="author" content="">
+
+<title>Create Post</title>
+
+
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script
+	src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script type="text/JavaScript"
+	src="http://underscorejs.org/underscore-min.js"></script>
+<script
+	src="http://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
+	
+	 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	
+<!-- include summernote css/js -->
+<link href="http://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.8/summernote.css" rel="stylesheet">
+<script src="http://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.8/summernote.min.js"></script>
+
+<!-- <script src="../js/editor.js"></script>
+<link href="../css/editor.css" type="text/css" rel="stylesheet"/> -->
+
+
+<!-- <link href="../css/bs_bootswatch_paper.css" type="text/css" rel="stylesheet"/> -->
+
+
+<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+
+<script type="text/javascript">
+
+/*$(document).ready(function(){
+    // Defining the local dataset
+    //var cars = ['Audi', 'BMW', 'Bugatti', 'Ferrari', 'Ford', 'Lamborghini', 'Mercedes Benz', 'Porsche', 'Rolls-Royce', 'Volkswagen'];
+    
+    // Constructing the suggestion engine
+    var cars = new Bloodhound({
+        ///https://github.com/twitter/typeahead.js/blob/master/doc/migration/0.10.0.md#tokenization-methods-must-be-provided
+        //http://mycodde.blogspot.in/2014/12/typeaheadjs-autocomplete-suggestion.html 
+        //https://scotch.io/tutorials/implementing-smart-search-with-laravel-and-typeahead-js
+        datumTokenizer: function(d) { 
+            return Bloodhound.tokenizers.whitespace(d.num); 
+          },
+        //[{ num: 'one' }, { num: 'two' }, { num: 'three' }],
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        
+    });
+    
+    // Initializing the typeahead
+    $('.typeahead').typeahead({
+        hint: true,
+        highlight: true, // Enable substring highlighting 
+        minLength: 2 // Specify minimum characters required for showing suggestions 
+    },
+    {
+        name: 'cars',
+        source: cars
+    });
+}); */ 
+
+var summerNoteExcp = false;
+var linksJson = {};
+var dropDownText;
+
+//typeahead initialization
+$(document).ready(function(){
+var bhSource = new Bloodhound({
+	  //datumTokenizer: Bloodhound.tokenizers.obj.whitespace('id'),
+	  datumTokenizer: function(d) { 
+	    return Bloodhound.tokenizers.whitespace(d.productName); 
+      },
+	  queryTokenizer: Bloodhound.tokenizers.whitespace,
+	  remote: 
+	  {
+	    url: 'http://localhost:8080/api/productSearch?searchTerm=QUERY',
+	    wildcard: 'QUERY',
+	    rateLimitWait : 600 	//milisec
+	  }
+	});
+
+	$('#typeahead').typeahead({
+        hint: false,
+        highlight: true,
+        minLength: 2
+    },		
+	{
+	  //name: 'products'
+		display: function(d) 
+		{ 
+			return d.productName ; 
+	    },
+	  source: bhSource,
+	  limit : 10
+	  //templates: 
+	  
+	});
+	
+	$('#typeahead').bind('typeahead:select', function(ev, suggestion) {
+		  console.log('Selection: ' + suggestion.productId);
+	});
+	
+});
+
+
+//summernote initialization
+$(document).ready(function() {
+	 
+    try{
+
+	    $('#txtArea').summernote(
+	    {
+		    toolbar: [
+		      // [groupName, [list of button]]
+		      //['color', ['color']],
+		      ['font',['fontsize']],
+		      ['style', ['bold', 'italic', 'underline']],
+		      //['font', ['strikethrough', 'superscript', 'subscript']],
+		    
+		      ['para', ['ul', 'ol', 'paragraph']],
+		       ['misc', ['undo', 'redo']]
+		      //['height', ['height']]
+		    ],
+		    callbacks: {
+		        onFocus: function() {
+		          //alert('Editable area is focused'); 
+		        	$(".note-editor.note-frame").css({"border": "1px solid rgba(0,0,0,0.6)"});
+		        },
+	    		onBlur: function() {
+	          //alert('Editable area is focused'); 
+	        	$(".note-editor.note-frame").css({"border": "1px solid rgba(0,0,0,0.2)"});
+	        	}
+		        
+		      },
+	    	disableDragAndDrop: true,
+	    	height: 100                 
+	    	//focus: false  
+	    	
+	  	});
+
+  		$('#txtArea').summernote('lineHeight', 1.0);
+  		//$('#txtArea').summernote('fontSize', 14);
+	}
+	catch(err)
+	{
+		$('#txtArea').html('<textarea class="form-control" rows="3"></textarea>');
+		summerNoteExcp = true;
+	}
+	
+	
+
+  });
+
+//other initializations
+$(document).ready(function() {
+	
+	//to un-focus from summernote
+	$('.dropdown button').focus();
+	
+	//dropDown on change
+	$(".dropdown-menu li a").click(function(){
+        dropDownText = $(this).text();
+
+        //alert(dropDownText);
+
+         $(this).closest('div.dropdown').find('.dropdown-toggle').html(dropDownText + ' <span class="caret"></span>');
+
+         //console.log($(this).closest('.dropdown-toggle'));
+         $('#category span.help-block').hide();
+	});
+	
+	
+	//radio on change
+	 $("input[name='post-type']").change(function(){
+	   	 if (this.checked) 
+	   	 {
+	   		 //alert( this.value);
+	   		$('#post-type span.help-block').hide();
+	   	 }
+    });
+	
+	$(".help-block").hide();
+	
+});
+
+
+$(document).ready(function(){
+ 
+    $("#add-link").click(function(){
+ 	
+    	var url = $("#link-input").val(); //"http://scratch99.com/web-development/javascript/";
+    	//alert(url);
+    	
+    	var siteName;
+    	
+    	if(url.indexOf("http://")==0 || url.indexOf("https://")==0)
+    	{
+    		
+    		var sourceString = url.replace('http://','').replace('https://','').replace('www.','').split(/[/?#]/)[0];
+    		siteName = sourceString.split('.')[0] ;
+    	}
+    	else
+    	{
+    		//invalid url
+    		alert('Provide a valid Website Address');
+    		return;
+    	}
+    	
+    	 //_.templateSettings.variable = "ctx";
+    	 
+    	 
+    	 
+    	 var data = {linkDesc:siteName, link:url};
+    	 
+    	 var tmpl = _.template($("#link_template").html(), {variable:"ctx"});
+         
+    	 var tmplHtml = tmpl(data);
+         
+    	 console.log(tmplHtml);
+    	 
+         $("#link-rows").append(tmplHtml);
+         
+         $("#link-input").val('');
+         
+         
+    	//alert(sourceString);
+    	
+      /*   var linksJsonVal = $("#linkHolder").val();
+ 
+        if(linksJsonVal!='')
+        {
+            //console.log('value='+linksJsonVal);
+            linksJson = JSON.parse(linksJsonVal);
+        }
+ 
+        key = 'flipkart';
+        linkVal = $("#link").val();
+       
+        if(linksJson[key] == null)
+        {
+            var jsonArr = [];
+ 
+            jsonArr.push(linkVal);
+ 
+            linksJson[key] = jsonArr;
+        }
+        else
+        {
+            linksJson[key].push(linkVal) ; 
+        }
+ 
+        $("#linkHolder").val(JSON.stringify(linksJson));
+ 
+        $('#myModal').modal('hide'); */
+ 
+        //alert(($("#linkHolder").val()));
+    });
+ 	
+    $("#link-rows").on("click", '.rm-btn', function(){
+        //alert(1);
+        $(this).closest("div.row").remove(); //.fadeOut(300);
+    });
+    
+    
+    $("#submit").click(function(){
+    	
+    	//take filed values
+    	
+    	var radioValue = $("input[name='post-type']:checked").val();
+        if(radioValue)
+        {
+            //alert("Your are a - " + radioValue);
+            $('#post-type span.help-block').hide();
+        }
+        else
+        {
+        	
+        	$('#post-type .help-block').html('<span class="help-block has-error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i> Please select post type</span>');
+        	//$('#post-type .help-block').addClass('has-error');
+//         	if (!$("#post-type .error-block").length){  
+//         		$('#post-type div').append('<span class="help-block has-error">Please Select a Post Type</span>');
+//         	}
+        	//$('#post-type .control-label').addClass('has-error');
+        }
+    	
+        if(dropDownText)
+        {
+        	$('#category span.help-block').hide();
+        }
+        else
+        {
+        	$('#category span.help-block').html('<span class="help-block has-error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i> Please select category</span>');
+        }
+        
+        var product = $('#product input[type="text"]').val();
+        
+    	var title = $('#title input[type="text"]').val();
+        
+        var postDetails;
+    	
+    	if(summerNoteExcp)
+    	{
+    		postBody = $('#txtArea textarea').val();
+    		
+    	}
+    	else
+    	{
+    		postBody = $('#txtArea').summernote('code');
+    	}
+    	
+    	var post = {};
+    	
+    	post.postBody = postBody;
+    	post.title = title;
+    	post.category = dropDownText;
+    	
+    	alert(postBody);
+    	
+    	$.ajax({
+    	    url: 'http://localhost:8080/api/post',
+    	    dataType: 'json',
+    	    type: 'POST',
+    	    contentType: 'application/json',
+    	    data: JSON.stringify( post ),
+    	    processData: false,
+    	    success: function( data, textStatus, jQxhr ){
+    	    	console.log( textStatus );
+    	    },
+    	    error: function( jqXhr, textStatus, errorThrown ){
+    	        console.log( errorThrown );
+    	    }
+    	});
+    	
+    })
+    
+    
+});
+	
+function urlCheck()
+{
+	
+	
+	var url = "http://scratch99.com/web-development/javascript/";
+	var urlParts = url.replace('http://','').replace('https://','').split(/[/?#]/);
+	var sourceString = url.replace('http://','').replace('https://','').replace('www.','').split(/[/?#]/)[0];
+	var domain = urlParts[0];
+	
+	
+}
+
+
+
+</script>
+
+
+<script type="text/template" id="link_template">
+ <div class="row">
+ 	<div class="link-desc col-lg-2 col-md-2 col-xs-2"><input type="text" class="form-control" value="<%=ctx.linkDesc%>"></div>
+ 	
+ 	<div class="input-group col-lg-10 col-md-10 col-xs-10">
+   
+	  <input type="text" class="form-control" value="<%=ctx.link%>" aria-label="Link URL">
+	  <span class="input-group-btn">
+         <span class="btn btn-default rm-btn" aria-label="Remove Link"><i class="fa fa-times" aria-hidden="true"></i></span>
+      </span>
+	</div>
+</div>
+</script>
+
+<style>
+
+.note-editor.note-frame .note-statusbar,
+.panel-default>.panel-heading
+{
+	background-color: #fff;
+}
+ 
+
+
+/* .note-editor.note-frame {
+    border: 1px solid rgba(0,0,0,0.2);
+} */
+
+
+.panel {
+	margin-bottom :0;
+	/* margin-top: 8px;
+    margin-bottom: 20px;
+    background-color: #fff; */
+/* 	border: none; */
+   	border-radius: 0;
+   	box-shadow: none;
+    /* -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    box-shadow: 0 1px 1px rgba(0,0,0,.05); */
+}
+
+
+
+.typeahead, .tt-query, .tt-hint {
+	/* padding: 8px 12px;
+  font-size: 24px; */
+	border: 1px solid #ccc;
+	-webkit-border-radius: 2px;
+	-moz-border-radius: 2px;
+	border-radius: 2px;
+	outline: none;
+	
+	
+	
+}
+
+
+.typeahead {
+	background-color: #fff;
+	
+}
+
+.twitter-typeahead{
+	width: 100%;
+	
+}
+
+
+.typeahead:focus {
+/* 	border-bottom: 1px solid #0097cf; */
+-webkit-box-shadow: inset 0 -2px 0 #2196f3;
+  box-shadow: inset 0 -2px 0 #2196f3;
+}
+
+.tt-query {
+	-webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+	-moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+
+.tt-hint {
+	color: #999
+}
+
+.tt-menu {
+	padding: 4px 0;
+	background-color: #fff;
+	border: 1px solid #ccc;
+	/*border-top: transparent;
+  	border: 1px solid rgba(0, 0, 0, 0.2);*/ -webkit-border-radius : 2px;
+	-moz-border-radius: 2px;
+	border-radius: 2px;
+	-webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+	-moz-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+	box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+	text-align: left;
+	-webkit-border-radius: 2px;
+	
+	width: 100%;
+}
+
+.tt-suggestion {
+	padding: 4px 12px;
+
+	/*font-size: 18px; 
+  line-height: 24px;*/
+}
+
+.tt-suggestion:hover {
+	cursor: pointer;
+	/* color: #fff;
+  background-color: #0097cf; */
+	background-color: rgba(0, 0, 0, .1);
+}
+
+/* .tt-suggestion .tt-cursor {
+  color: #fff;
+  background-color: #0097cf;
+
+} */
+
+
+
+ 
+body {
+  	font-family: 'Roboto', sans-serif;
+  	font-weight: 400;
+	font-size: 14px; 
+  	font-weight: normal;
+	color: black;
+}
+
+.form-control{
+	border-radius: 0;
+	box-shadow: none;
+/* 	border-radius: 2px; */
+ 	border: 1px solid rgba(0,0,0,0.2);
+ 	color: black;
+ 	font-size: 1em; 
+}
+.form-control:hover{
+/* 	border-radius: 2px; */
+	border: 1px solid #2196f3;
+	box-shadow: none;
+	
+}
+
+.form-control:focus{
+/* 	border-radius: 2px; */
+	border: 1px solid rgba(0,0,0,0.6);
+	box-shadow: none;
+	
+}
+
+.control-label{
+font-weight: bold;
+color: rgba(0,0,0,0.7);
+font-size: 1.1em;
+padding-right: 30px;
+
+}
+
+
+form>.form-group{
+
+	margin-bottom: 24px;
+/* 	background: rgba(0,0,0,0.1); */
+}
+
+/**************************Dropdowns*************************/
+.dropdown {
+/*   border-bottom: 1px solid #eee; */
+display: inline-block;
+  
+  
+  width: 100%;
+  
+  padding: 0;
+  border: none;
+  border-radius: 0;
+ 
+  
+}
+
+
+/* @media (max-width: 767px) {
+  .dropdown {
+   width: 95%;
+  }
+} */
+
+.dropdown .btn {
+
+  padding-top: 8px;
+ 
+  width: 100%;
+  text-align: left;
+  
+ border-radius: 0;	
+}
+
+
+.dropdown .btn:hover{
+	background: none;
+	border: 1px solid #2196f3;
+  
+}
+
+.dropdown .btn:focus{
+	background: none;
+}
+
+.open>.dropdown-toggle.btn-default:focus, .open>.dropdown-toggle.btn-default:hover {
+    background-color: #fff;
+/*     border-bottom: transparent; */
+    border-color: rgba(0,0,0,0.7);
+}
+
+.dropdown .btn .caret {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+/*   margin-top: -2px; */
+}
+
+
+.dropdown-menu{
+	width: 100%;
+	border-radius: 0;
+/* 	border: 1px solid rgba(0,0,0,0.4); */
+	border-top: transparent;
+	margin-top: 0;
+	padding-bottom: 8px;
+}
+
+.dropdown-menu .dropdown-header{
+	
+	font-size: 1em;
+	font-weight : bold;
+	color: rgba(0,0,0,0.5);
+	margin-top: 8px;
+}
+
+
+.dropdown-menu .divider{
+	
+	margin: 0;
+	margin-right: 15px;  
+	margin-left: 15px;
+
+	margin-bottom: 4px;
+	background-color: rgba(0,0,0,0.2);
+}
+
+.link-desc{
+padding-left :0 ;
+padding-right: 4px;
+font-weight: bold;
+}
+
+.link-val{
+padding-right: 0;
+}
+
+.rm-btn{
+color:red;
+} 
+
+ .input-group-btn{
+	padding-left: 1px; 
+	padding-bottom: 0;
+	margin-bottom: 0;
+	
+}
+
+.linkDiv{ 
+margin-top: 10px; 
+
+} 
+#link-rows{
+margin: 10px ;
+}  
+
+.opt{
+font-weight: normal;
+}
+
+
+/* .has-error .help-block,
+.has-error .control-label,
+.has-error .radio,
+.has-error .checkbox,
+.has-error .radio-inline,
+.has-error .checkbox-inline,
+.has-error.radio label,
+.has-error.checkbox label,
+.has-error.radio-inline label,
+.has-error.checkbox-inline label  */
+
+.has-error
+{
+  color: red;
+}
+
+.help-block {
+   
+/*     margin-top: 4px; */
+    margin: 0;
+    padding: 0;
+     /*padding-top: 4px;
+    color: #737373; */
+}
+
+/************** custom radio ***************/
+
+input[type="radio"] {
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+  padding: 0;
+}
+
+input[type="radio"],
+{
+  margin: 4px 0 0;
+  margin-top: 1px \9;
+  line-height: normal;
+}
+
+input[type="radio"]:focus,
+input[type="checkbox"]:focus {
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+
+.radio,
+{
+  position: relative;
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.radio label,
+.checkbox label {
+  min-height: 23px;
+  padding-left: 20px;
+  margin-bottom: 0;
+  font-weight: normal;
+  cursor: pointer;
+}
+.radio input[type="radio"],
+.radio-inline input[type="radio"],
+.checkbox input[type="checkbox"],
+.checkbox-inline input[type="checkbox"] {
+  position: absolute;
+  margin-left: -20px;
+  margin-top: 4px \9;
+}
+.radio + .radio,
+.checkbox + .checkbox {
+  margin-top: -5px;
+}
+.radio-inline,
+.checkbox-inline {
+  position: relative;
+  display: inline-block;
+  padding-left: 20px;
+  margin-bottom: 0;
+  vertical-align: middle;
+  font-weight: normal;
+  cursor: pointer;
+}
+.radio-inline + .radio-inline,
+.checkbox-inline + .checkbox-inline {
+  margin-top: 0;
+  margin-left: 10px;
+}
+input[type="radio"][disabled],
+input[type="checkbox"][disabled],
+input[type="radio"].disabled,
+input[type="checkbox"].disabled,
+fieldset[disabled] input[type="radio"],
+fieldset[disabled] input[type="checkbox"] {
+  cursor: not-allowed;
+}
+.radio-inline.disabled,
+.checkbox-inline.disabled,
+fieldset[disabled] .radio-inline,
+fieldset[disabled] .checkbox-inline {
+  cursor: not-allowed;
+}
+
+.form-inline .radio input[type="radio"],
+  .form-inline .checkbox input[type="checkbox"] {
+    position: relative;
+    margin-left: 0;
+  }
+
+.form-horizontal .radio-inline,
+{
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 7px;
+}
+.form-horizontal .radio,
+{
+  min-height: 30px;
+}
+
+input[type="radio"],
+.radio input[type="radio"],
+.radio-inline input[type="radio"] {
+  position: relative;
+  margin-top: 4px;
+  margin-right: 4px;
+  vertical-align: top;
+  border: none;
+  background-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+input[type="radio"]:focus,
+.radio input[type="radio"]:focus,
+.radio-inline input[type="radio"]:focus {
+  outline: none;
+}
+input[type="radio"]:before,
+.radio input[type="radio"]:before,
+.radio-inline input[type="radio"]:before,
+input[type="radio"]:after,
+.radio input[type="radio"]:after,
+.radio-inline input[type="radio"]:after {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  -webkit-transition: 240ms;
+  -o-transition: 240ms;
+  transition: 240ms;
+}
+input[type="radio"]:before,
+.radio input[type="radio"]:before,
+.radio-inline input[type="radio"]:before {
+  position: absolute;
+  left: 0;
+  top: -3px;
+  background-color: rgba(0,0,0,0.7) ; /* #2196f3 */
+  -webkit-transform: scale(0);
+  -ms-transform: scale(0);
+  -o-transform: scale(0);
+  transform: scale(0);
+}
+input[type="radio"]:after,
+.radio input[type="radio"]:after,
+.radio-inline input[type="radio"]:after {
+  position: relative;
+  top: -3px;
+  border: 2px solid #666666;
+}
+input[type="radio"]:checked:before,
+.radio input[type="radio"]:checked:before,
+.radio-inline input[type="radio"]:checked:before {
+  -webkit-transform: scale(0.5);
+  -ms-transform: scale(0.5);
+  -o-transform: scale(0.5);
+  transform: scale(0.5);
+}
+input[type="radio"]:disabled:checked:before,
+.radio input[type="radio"]:disabled:checked:before,
+.radio-inline input[type="radio"]:disabled:checked:before {
+  background-color: #bbbbbb;
+}
+input[type="radio"]:checked:after,
+.radio input[type="radio"]:checked:after,
+.radio-inline input[type="radio"]:checked:after {
+  border-color:   rgba(0,0,0,0.7); /* #2196f3; */
+}
+input[type="radio"]:disabled:after,
+.radio input[type="radio"]:disabled:after,
+.radio-inline input[type="radio"]:disabled:after,
+input[type="radio"]:disabled:checked:after,
+.radio input[type="radio"]:disabled:checked:after,
+.radio-inline input[type="radio"]:disabled:checked:after {
+  border-color: #bbbbbb;
+}
+
+form { 
+background:white; 
+padding: 12px;
+padding-right: 20px;
+border-radius: 4px;
+border: 1px solid  rgba(0,0,0,0.4);
+margin: 12px;
+}
+body { background:#FAF4F8; }
+</style>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(document).on("change", "#fileUpload", function (event) {
+            event.stopPropagation();
+            event.preventDefault();
+            readURL(this);
+        });
+    });
+
+    function readURL(input) {
+
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                $('#check').attr('src', e.target.result);
+                $("#check").show();
+            }
+
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+
+</head>
+
+<body>
+
+	<div class="container">
+		<h2>Create</h2>
+		
+		
+
+		<form action="/" class="form-horizontal">
+
+			<!-- <div class="form-group" id="post-type">
+			      <label for="post-type" class="col-lg-2 control-label">Post Type</label>
+			      <div class="col-lg-10">
+			        <label class="radio-inline">
+                    	<input name="post-type" type="radio" value="question">Question
+                    </label>
+                	<label class="radio-inline">
+                    	<input name="post-type" type="radio" value="review">Review
+                	</label>
+                 	<span class="help-block"></span>
+			      </div>
+			</div> -->
+			
+            <input type="file" accept="image/x-png,image/gif,image/jpeg" id="fileUpload" />
+            <img id="check" src="#" alt="your uploaded image" style="display:none"/>
+			<div class="form-group" id="category">	
+				<label for="inputEmail" class="col-lg-2 control-label">Category</label>
+				<div class="col-lg-5 col-md-5">
+					<div class="dropdown">
+						<button class="btn btn-default btn-block dropdown-toggle" type="button" data-toggle="dropdown">
+							Select 
+							<span class="caret"></span>
+						</button>
+						<ul class="dropdown-menu" role="menu" aria-label="Dropdown-Menu">
+							<li class="dropdown-header">Electronics</li>
+							<li class="divider"></li>
+							<li><a href="#">Available glyphs</a></li>
+							<li><a href="#">Examples</a></li>
+							
+							<li class="dropdown-header">Dropdowns</li>
+							<li class="divider"></li>
+							<li><a href="#">Example</a></li>
+							<li><a href="#">Aligninment options</a></li>
+							<li><a href="#">Headers</a></li>
+							<li><a href="#">Disabled menu items</a></li>
+						</ul>
+					</div>
+					<span class="help-block"></span>
+				</div>	
+				<div class="col-lg-5 col-md-5"></div>
+			</div>	
+			
+			<div class="form-group" id="product">
+				<label for="product" class="col-lg-2 control-label">Product</label>
+				 <div class="col-lg-5">
+					<input type="text" class="form-control" id="typeahead" name="product">
+				</div>
+				<div class="col-lg-5"></div>
+			</div>
+			
+			
+			<div class="form-group" id="title">
+				<label for="first_name" class="col-lg-2 control-label">Post Title</label> 
+				<div class="col-lg-10">
+					<input type="text"
+					class="form-control" id="post_title" name="post_title">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="last_name" class="col-lg-2 control-label">Post Detail</label> 
+				
+				<div class="col-lg-10">
+					<!-- <textarea id="txtEditor" class="form-control"></textarea>  -->
+					<div id="txtArea" name="post-content"></div>
+				</div>
+			</div>
+			
+			<div class="form-group">
+				<label for="product" class="col-lg-2 control-label">Buy From</label>
+				  <div class="col-lg-10">
+				  	<!-- <div>
+					  <a href="#" class="btn btn-default">Flipkart</a>
+					  <a href="#" class="btn btn-default">Amazon</a>
+					  <a href="#" class="btn btn-default">Snapdeal</a>
+					  <a href="#" class="btn btn-default">Other Online Stores</a>
+					  <a href="#" class="btn btn-default">Physical Store</a>
+					</div> -->
+					
+						<!-- <div class="col-lg-2">
+						 	<input type="text" class="form-control" id="post_title" name="post_title" value="Flipkart">
+					 	</div>	
+					 	<div class="col-lg-9">
+						 	<input type="text" class="form-control" id="post_title" name="post_title" placeholder="https://">
+						 	<i class="fa fa-balance-scale fa-stack-1x"></i> 
+					 	</div>	-->
+					 	
+					 <!-- <div class="link-row">
+					 	<span class="link-desc col-lg-2 col-md-2 col-xs-2"><input type="text" class="form-control" id="post_title" name="post_title" value="Flipkart"></span>
+					 	<span class="link-val col-lg-9 col-md-9 col-xs-9"><input type="text" class="form-control" id="post_title" name="post_title" placeholder="https://"></span>
+					 	
+					 	<span class="col-lg-1 col-md-1 col-xs-1">
+						  <span class="btn btn-default rm-btn" aria-label="Remove Link"><i class="fa fa-times" aria-hidden="true"></i></span>
+						</span>
+					 </div>	 -->
+					 
+					 <div class="input-group">
+					   
+					  <input type="text" class="form-control" id="link-input" placeholder="https://" aria-label="Link URL">
+<!-- 					  <span class="input-group-addon">Add</span> -->
+					  <span class="input-group-btn">
+				        <button class="btn btn-default" type="button" id="add-link">Add</button>
+				      </span>
+					</div>
+							
+					
+					
+					<div id="link-rows">
+					 	
+					 </div>	
+										 	
+						  
+				</div>
+			</div>
+			
+			
+			<div class="form-group">
+				<label for="product" class="col-lg-2 control-label">Blog/Video Links <span class="opt">(optional)</span></label>
+				   <div class="col-lg-10">
+			  		<div class="input-group">
+					   
+					  <input type="text" class="form-control" placeholder="https://" aria-label="Link URL">
+<!-- 					  <span class="input-group-addon">Add</span> -->
+					  <span class="input-group-btn">
+				        <button class="btn btn-default" type="button" id="add-link">Add</button>
+				      </span>
+					</div>
+				</div>	
+			</div>
+			
+			<div class="form-group">
+				<label for="product" class="col-lg-2 control-label">Social Media Links <span class="opt">(optional)</span></label>
+				  <div class="col-lg-10">
+					  <div class="input-group">
+						   
+						  <input type="text" class="form-control" placeholder="https://" aria-label="Link URL">
+	<!-- 					  <span class="input-group-addon">Add</span> -->
+						  <span class="input-group-btn">
+					        <button class="btn btn-default" type="button" id="add-link">Add</button>
+					      </span>
+						</div>
+				</div>
+			</div>
+			
+			<button type="button" id="submit" class="btn btn-default">Submit</button>
+			
+			<input type="hidden" name="linkHolder" id="linkHolder">
+		</form>
+
+
+
+
+
+
+
+
+
+	</div>
+
+
+
+
+</body>
+
+</html>
